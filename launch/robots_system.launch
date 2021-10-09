@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+
+<launch>
+    <group ns='robotino0'>
+        <include file='$(find interconnected_robots)/launch/robotino.launch' />
+    </group>
+
+    <group ns='robotino1'>
+        <include file='$(find interconnected_robots)/launch/robotino.launch' />
+    </group>
+
+    <group ns='robotino2'>
+        <include file='$(find interconnected_robots)/launch/robotino.launch' />
+    </group>
+</launch>

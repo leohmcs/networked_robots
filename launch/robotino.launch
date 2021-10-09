@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+
+<launch>
+    <node name='navigator' type='navigate.py' pkg='interconnected_robots' output='screen' />
+    
+    <node name='reactive_planner' type='reactive.py' pkg='interconnected_robots' output='screen' />
+
+    <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan" output="screen">
+		<remap from="cloud_in" to="points2" />
+      
+		<param name="angle_min" value="-2.3562" />  <!-- -135*pi/180 -->
+		<param name="angle_max" value="2.3562" />  <!-- 135*pi/180 -->
+		<param name="angle_increment" value="0.0061" />  <!-- 2*pi/1024 -->
+		<param name="time_increment" value="0.000018" />  <!-- (1/50)/81 -->
+		<param name="scan_time" value="0.0333" />
+		<param name="range_min" value="0" />
+		<param name="range_max" value="5" />
+		<param name="use_inf" value="true" />
+		<param name="concurrency_level" value="1" />
+	</node>
+</launch>
