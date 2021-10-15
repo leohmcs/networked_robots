@@ -7,3 +7,4 @@ def pointmsg_to_numpyarray(msg, _3d=False):
         return np.array([msg.x, msg.y, msg.z])
 
     return np.array([msg.x, msg.y])
+    
