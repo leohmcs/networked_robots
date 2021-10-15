@@ -15,7 +15,7 @@
 		<param name="scan_time" value="0.0333" />
 		<param name="range_min" value="0" />
 		<param name="range_max" value="5" />
-		<param name="use_inf" value="true" />
+		<param name="use_inf" value="false" />
 		<param name="concurrency_level" value="1" />
 	</node>
 </launch>
