@@ -4,10 +4,11 @@
 import rospy
 import actionlib
 import tf.transformations as tft
-from geometry_msgs.msg import PoseStamped, Twist
+from geometry_msgs.msg import PointStamped, PoseStamped, Twist
 from interconnected_robots.msg import *
 from nav_msgs.msg import Path, Odometry
 from sensor_msgs.msg import LaserScan
+import tf
 
 from nav_msgs.srv import GetPlan
 
@@ -20,70 +21,76 @@ from utils.transformations import Rz
 
 class ReactiveNode:
     def __init__(self, name, connection_radius):
-        self.action_server = actionlib.SimpleActionServer(name, ReactivePlannerAction, \
-            execute_cb=self.action_callback, auto_start=False)
+        # self.action_server = actionlib.SimpleActionServer(name, ReactivePlannerAction, \
+        #     execute_cb=self.action_callback, auto_start=False)
         
-        self.action_feedback = ReactivePlannerFeedback()
-        self.action_result = ReactivePlannerResult()
-        self.action_server.start()
+        # self.action_feedback = ReactivePlannerFeedback()
+        # self.action_result = ReactivePlannerResult()
+        # self.action_server.start()
 
         self.robot_pos = None
         self.robot_ori = None
         self.goal = None
         
         self.max_linear_speed = 0.3
+        self.min_linear_speed = 0.1
         self.max_angular_speed = np.deg2rad(30)
 
         self.CONNECTION_RADIUS = connection_radius
         self.MAX_SENSOR_RANGE = 5
 
-        self.dists_to_obstacles = []    # [ang, dist]
+        self.obstacles_positions = []    # [x, y]
 
+        goal_sub = rospy.Subscriber('map/frontiers/nearest', PointStamped, callback=self.goal_callback)
         laser_sub = rospy.Subscriber('scan', LaserScan, callback=self.laser_callback)
         odom_sub = rospy.Subscriber('odom', Odometry, callback=self.odom_callback)
 
         self.vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=100)
 
-    def action_callback(self, req):
-        self.goal = pointmsg_to_numpyarray(req.goal.pose.position)
-        success = True
-        start_time = rospy.Time.now()
+    def turn(self, ang_vel=None, angle=2*np.pi):
+        if ang_vel is None:
+            ang_vel = self.max_angular_speed
 
-        # error check
+        dt = angle / ang_vel
+        start_time = rospy.Time.now().to_sec()
+
+        while rospy.Time.now().to_sec() - start_time < dt:
+            vel = np.array([0.0, 0.0, ang_vel])
+            self.publish_velocity(vel)
+
+    def go(self):
+        '''
+        Go to goal position using potential fields
+        '''
         if self.robot_pos is None:
             rospy.logerr('{}\'s position is unknown.'.format(rospy.get_namespace()))
-            success = False
+            return
 
         if self.robot_ori is None:
             rospy.logerr('{}\'s orientation is unknown.'.format(rospy.get_namespace()))
-            success = False
+            return
 
-        if success:
+        if self.goal is None:
+            rospy.loginfo('Waiting for goal')
+            return
+
+        distance_to_goal = np.linalg.norm(self.robot_pos - self.goal)
+        while distance_to_goal > 0.7:  # TODO: botar como parâmetro
+            print(distance_to_goal)
+            vel = self.resultant_force()
+            vel = np.append(vel, 0.0) # append angular velocity
+            self.publish_velocity(vel)
             distance_to_goal = np.linalg.norm(self.robot_pos - self.goal)
-            while distance_to_goal > 0.2:  # TODO: botar o 0.2 como parâmetro
-                if self.action_server.is_preempt_requested():
-                    vel = np.array([0, 0])
-                    self.publish_velocity(vel)
-                    rospy.loginfo('Action preempted.')
-                    success = False
-                    break
 
-                vel = self.resultant_force()
-                self.publish_velocity(vel)
+    def goal_callback(self, msg):
+        self.goal = np.array([msg.point.x, msg.point.y])
 
-                self.action_feedback.distance_to_goal = distance_to_goal
-                self.action_server.publish_feedback(self.action_feedback)
+    def laser_callback(self, msg):
+        robot_pos = self.robot_pos
+        robot_yaw_rot = self.robot_ori[2]
 
-            self.action_server.set_succeeded()
-            self.action_result.time_duration = rospy.Time.now() - start_time
-            rospy.loginfo('Action succeeded.')
-
-        else:
-            self.action_server.set_aborted()
-
-    def laser_callback(self, msg):        
         aux = []
-        min_ranges = []
+        min_obstacles_pos = []     # closest point of each obstacle
 
         ranges = np.array(msg.ranges)
         it = np.nditer(ranges, flags=['c_index'])
@@ -92,33 +99,35 @@ class ReactiveNode:
                 if len(aux) > 0:                    
                     aux = np.array(aux)
                     min_dist_reading = aux[np.argmin(aux[:, 1])]
-                    min_ranges.append(min_dist_reading)
+                    th, r = min_dist_reading[0], min_dist_reading[1]
+                    reading_pos = [r * np.cos(th + robot_yaw_rot), r * np.sin(th + robot_yaw_rot)] + robot_pos
+                    min_obstacles_pos.append(reading_pos)
                     aux = []
 
                 continue
             
-            ang = it.index * msg.angle_increment + msg.angle_min
+            ang = (it.index * msg.angle_increment) + msg.angle_min
             aux.append([ang, r])
         
-        self.dists_to_obstacles = np.array(min_ranges)
+        self.obstacles_positions = np.array(min_obstacles_pos)
 
     def odom_callback(self, msg):
         self.robot_pos = pointmsg_to_numpyarray(msg.pose.pose.position)
         quat = msg.pose.pose.orientation
         euler = tft.euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
         self.robot_ori = np.array(euler)
-    
-    def normalize_velocity(self, vel):
-        return (vel / np.linalg.norm(vel)) * self.max_linear_speed
 
     def publish_velocity(self, vel):
-        speed = np.linalg.norm(vel)
-        if speed > self.max_linear_speed:
-            vel = self.normalize_velocity(vel)
+        speed = np.linalg.norm(vel[:2])
+        if speed > self.max_linear_speed and speed > 0:
+            vel[:2] = vel[:2] / speed * self.max_linear_speed
+        elif speed < self.min_linear_speed and speed > 0:
+            vel[:2] = vel[:2] / speed * self.min_linear_speed
 
         msg = Twist()
         msg.linear.x = vel[0]
         msg.linear.y = vel[1]
+        msg.angular.z = vel[2]
         
         self.vel_pub.publish(msg)
 
@@ -130,13 +139,13 @@ class ReactiveNode:
 
     def resultant_force(self):
         att = self.att_force()
-        rep = self.rep_force(self.dists_to_obstacles, max_dist=self.MAX_SENSOR_RANGE)
+        rep = self.rep_force(self.obstacles_positions, max_dist=self.MAX_SENSOR_RANGE)
         
         res = att + rep
-        # self.animate(att, rep, res)
+        self.animate(att, rep, res)
         return res
 
-    def att_force(self, katt=.2):
+    def att_force(self, katt=.5):
         robot_pos = self.robot_pos
         goal = self.goal
 
@@ -150,41 +159,43 @@ class ReactiveNode:
         
         return katt * (goal - robot_pos)
 
-    def rep_force(self, laser_ranges, krep=.5, max_dist=5):
+    def rep_force(self, obs_pos, krep=.2, max_dist=2):
         forces = np.array([0.0, 0.0])
 
-        if len(self.dists_to_obstacles) == 0: # no obstacles
+        if len(obs_pos) == 0: # no obstacles
             return forces
 
-        ang_it = np.nditer(laser_ranges[:, 0])
-        d_it = np.nditer(laser_ranges[:, 1], flags=['c_index'])
-        for ang, d in zip(ang_it, d_it):
+        # x = np.nditer(laser_ranges[:, 0])
+        # y = np.nditer(laser_ranges[:, 1], flags=['c_index'])
+        for p in obs_pos:
+            d = np.linalg.norm(p - self.robot_pos)
             if d > max_dist:
                 forces += [0.0, 0.0]
             else:
-                if self.is_robot(ang, d):
+                if self.is_robot(p):
                     krep = self.rep_gain(d, self.CONNECTION_RADIUS)
-                obs_pos = np.array([d * np.cos(ang), d * np.sin(ang)]) + self.robot_pos
-                force = - (krep / d**2) * (1/d - 1/max_dist) * (obs_pos - self.robot_pos)/max_dist
+                force = (krep / d**2) * ((1/d) - (1/max_dist)) * (self.robot_pos - p)/d
                 forces += force
         
         return np.array(forces)
 
     # TODO checks if a given reading is of another robot or ordinary obstacle
-    def is_robot(self, ang, d):
-        return True
+    def is_robot(self, pos):
+        return False
 
     def animate(self, att_force, rep_force, res_force):
         plt.cla()
-        plt.quiver(self.robot_pos[0], self.robot_pos[1], att_force[0], att_force[1], color='r', label="Attraction")
+        plt.quiver(self.robot_pos[0], self.robot_pos[1], att_force[0], att_force[1], color='g', label="Attraction")
         
-        plt.quiver(self.robot_pos[0], self.robot_pos[1], rep_force[0], rep_force[1], color='g', label="Repulsion")
+        plt.quiver(self.robot_pos[0], self.robot_pos[1], rep_force[0], rep_force[1], color='r', label="Repulsion")
         
         plt.quiver(self.robot_pos[0], self.robot_pos[1], res_force[0], res_force[1], color='purple', label="Resultant Force")
 
-        plt.plot(self.robot_pos[0], self.robot_pos[1], 'ro', label="Robot Position")
+        plt.plot(self.robot_pos[0], self.robot_pos[1], 'bo', label="Robot Position")
         plt.plot(self.goal[0], self.goal[1], 'go', label="Goal")
-        
+        obstacles = np.transpose(self.obstacles_positions)
+        plt.scatter(obstacles[0], obstacles[1], color='r', label="Obstacles")
+
         plt.title(rospy.get_namespace().replace('/', ''))
         plt.legend()
         pad = 8
@@ -198,5 +209,9 @@ class ReactiveNode:
 node_name = 'reactive_planner'
 rospy.init_node(node_name)
 rospy.loginfo(node_name + ' inicializado com sucesso.')
-server = ReactiveNode(node_name, 2)
-rospy.spin()
+node = ReactiveNode(node_name, 2)
+while not rospy.is_shutdown():
+    node.turn()
+    node.go()
+    rospy.loginfo('[{}] Arrived'.format(rospy.get_namespace().replace('/', '')))
+    rospy.sleep(0.1)
