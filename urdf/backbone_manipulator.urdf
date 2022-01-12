@@ -30,7 +30,7 @@
         <parent link="base_link"/>
         <child link="base"/>
         <origin rpy="0 0 0" xyz="0 0 0.01"/>
-        <axis xyz="0 0 1.0"/>
+        <axis xyz="1.0 0 0"/>
     </joint>
 
     <link name="base">
@@ -41,13 +41,19 @@
             <origin rpy="0 0 0" xyz="0 0 0.1"/>
             <material name="green"/>
         </visual>
+        <collision>
+            <geometry>
+                <sphere radius="0.1"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0.1"/>
+        </collision>
     </link>
 
     <joint name="base_to_network" type="continuous">
         <parent link="base"/>
         <child link="network_base_to_robot4"/>
         <origin rpy="0 0 0" xyz="0 0 0.1"/>
-        <axis xyz="1.0 0 0"/>
+        <axis xyz="0 1.0 0"/>
     </joint>
 
     <link name="network_base_to_robot4">
@@ -63,7 +69,7 @@
         <parent link="network_base_to_robot4"/>
         <child link="robot4"/>
         <origin rpy="0 0 0" xyz="0 0 5"/>
-        <axis xyz="0 0 1.0"/>
+        <axis xyz="1.0 0 0"/>
     </joint>
 
     <link name="robot4">
@@ -72,15 +78,21 @@
                 <sphere radius="0.1"/>
             </geometry>
             <origin rpy="0 0 0" xyz="0 0 0"/>
-            <material name="white"/>
+            <material name="blue"/>
         </visual>
+        <collision>
+            <geometry>
+                <sphere radius="0.1"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+        </collision>
     </link>
 
     <joint name="robot4_to_network" type="continuous">
         <parent link="robot4"/>
         <child link="network_robot4_to_robot3"/>
         <origin rpy="0 0 0" xyz="0 0 0"/>
-        <axis xyz="1.0 0 0"/>
+        <axis xyz="0 1.0 0"/>
     </joint>
 
     <link name="network_robot4_to_robot3">
@@ -96,7 +108,7 @@
         <parent link="network_robot4_to_robot3"/>
         <child link="robot3"/>
         <origin rpy="0 0 0" xyz="0 0 5"/>
-        <axis xyz="0 0 1.0"/>
+        <axis xyz="1.0 0 0"/>
     </joint>
 
     <link name="robot3">
@@ -105,15 +117,21 @@
                 <sphere radius="0.1"/>
             </geometry>
             <origin rpy="0 0 0" xyz="0 0 0"/>
-            <material name="white"/>
+            <material name="blue"/>
         </visual>
+        <collision>
+            <geometry>
+                <sphere radius="0.1"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+        </collision>
     </link>
 
    <joint name="robot3_to_network" type="continuous">
         <parent link="robot3"/>
         <child link="network_robot3_to_robot2"/>
         <origin rpy="0 0 0" xyz="0 0 0"/>
-        <axis xyz="1.0 0 0"/>
+        <axis xyz="0 1.0 0"/>
     </joint>
 
     <link name="network_robot3_to_robot2">
@@ -129,7 +147,7 @@
         <parent link="network_robot3_to_robot2"/>
         <child link="robot2"/>
         <origin rpy="0 0 0" xyz="0 0 5"/>
-        <axis xyz="0 0 1.0"/>
+        <axis xyz="1.0 0 0"/>
     </joint>
 
     <link name="robot2">
@@ -138,15 +156,21 @@
                 <sphere radius="0.1"/>
             </geometry>
             <origin rpy="0 0 0" xyz="0 0 0"/>
-            <material name="white"/>
+            <material name="blue"/>
         </visual>
+        <collision>
+            <geometry>
+                <sphere radius="0.1"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+        </collision>
     </link>
 
     <joint name="robot2_to_network" type="continuous">
         <parent link="robot2"/>
         <child link="network_robot2_to_robot1"/>
         <origin rpy="0 0 0" xyz="0 0 0"/>
-        <axis xyz="1.0 0 0"/>
+        <axis xyz="0 1.0 0"/>
     </joint>
 
     <link name="network_robot2_to_robot1">
@@ -162,7 +186,7 @@
         <parent link="network_robot2_to_robot1"/>
         <child link="robot1"/>
         <origin rpy="0 0 0" xyz="0 0 5"/>
-        <axis xyz="0 0 1.0"/>
+        <axis xyz="1.0 0 0"/>
     </joint>
 
     <link name="robot1">
@@ -171,15 +195,21 @@
                 <sphere radius="0.1"/>
             </geometry>
             <origin rpy="0 0 0" xyz="0 0 0"/>
-            <material name="white"/>
+            <material name="blue"/>
         </visual>
+        <collision>
+            <geometry>
+                <sphere radius="0.1"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+        </collision>
     </link>
 
    <joint name="robot1_to_network" type="continuous">
         <parent link="robot1"/>
         <child link="network_robot1_to_robot0"/>
         <origin rpy="0 0 0" xyz="0 0 0"/>
-        <axis xyz="1.0 0 0"/>
+        <axis xyz="0 1.0 0"/>
     </joint>
 
     <link name="network_robot1_to_robot0">
@@ -195,7 +225,7 @@
         <parent link="network_robot1_to_robot0"/>
         <child link="robot0"/>
         <origin rpy="0 0 0" xyz="0 0 5"/>
-        <axis xyz="0 0 1.0"/>
+        <axis xyz="1.0 0 0"/>
     </joint>
 
     <link name="robot0">
@@ -204,7 +234,13 @@
                 <sphere radius="0.1"/>
             </geometry>
             <origin rpy="0 0 0" xyz="0 0 0"/>
-            <material name="white"/>
+            <material name="blue"/>
         </visual>
+        <collision>
+            <geometry>
+                <sphere radius="0.1"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+        </collision>
     </link>
 </robot>
