@@ -1,1 +1,1 @@
-# interconnected_robots
+# networked_robots
