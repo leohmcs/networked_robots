@@ -12,4 +12,8 @@
     <group ns='robotino2'>
         <include file='$(find interconnected_robots)/launch/robotino.launch' />
     </group>
+
+    <group ns='robotino3'>
+        <include file='$(find interconnected_robots)/launch/robotino.launch' />
+    </group>
 </launch>
