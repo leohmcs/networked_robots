@@ -1,5 +1,0 @@
-geometry_msgs/PoseStamped goal
----
-float32 time_duration
----
-float32 distance_to_goal
