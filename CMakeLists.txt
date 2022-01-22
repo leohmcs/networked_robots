@@ -11,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
     rospy
     std_msgs
     geometry_msgs
-    actionlib_msgs
     message_generation
 )
 
@@ -49,33 +48,30 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  DIRECTORY
+  msg
+  FILES
+  Backbone.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
+#  FILES  
 # )
 
 ## Generate actions in the 'action' folder
-add_action_files(
-    DIRECTORY
-    action
-    FILES
-    ReactivePlanner.action
-)
+# add_action_files(
+#     DIRECTORY
+#     action
+#     FILES
+# )
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
-  DEPENDENCIES
-  actionlib_msgs
-  std_msgs
-  geometry_msgs
+ DEPENDENCIES
+ std_msgs
+ geometry_msgs
 )
 
 ################################################
@@ -107,9 +103,9 @@ generate_messages(
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(
- CATKIN_DEPENDS actionlib_msgs
-)
+# catkin_package(
+#  CATKIN_DEPENDS actionlib_msgs
+# )
 
 ###########
 ## Build ##
