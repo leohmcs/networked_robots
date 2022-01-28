@@ -9,7 +9,6 @@ class JointStateFromBackbone:
         self.net_radius = net_radius
         self.links_names = ['robot4', 'robot3', 'robot2', 'robot1', 'robot0']
 
-
     def T(self, rot, trans):
         T = np.eye(4)
         for i in range(len(rot) - 1):
