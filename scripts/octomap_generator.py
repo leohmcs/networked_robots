@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 #coding:utf-8
 
+import rospy
+from octomap_msgs.msg import OctomapWithPose
 import numpy as np
 
 
@@ -12,31 +14,23 @@ class OctomapGenerator:
         self.HAS_CHILDREN = '11'
         self.MIN_HEIGHT = 25    # TODO: get net radius from rosparam instead of using a constant
 
-        self.octomap = None
+        self.octomap_data = None
         self.root_dim = 0
         self.max_depth = 1
-    
-    def binarize(self, data, thresh=50):
-        data[np.where((data > 0) & (data < thresh))] = 0
-        data[np.where(data >= thresh)] = 1
-        return data
 
-    # TODO
-    def fill_missing_cells(self, occ_grid):
-        ''' 
-        Because the OctoMap has a set dimension, we may need to fill the Occupancy Grid 
-        with unknown cells to match the OctoMap dimensions.
+    def octomap_from_occupancygrid(self, occ_grid, binary=True, occ_thresh=50):
         '''
-        return occ_grid
-
-    def octomap_from_occupancygrid(self, occ_grid, resolution, binary=True, occ_thresh=50):
-        '''
-        Input: occupancy grid [m x n]
+        Input: nav_msgs/OccupancyGrid message
+        Output: octomap_msgs/OctomapWithPose
         '''
         self.init_map()
+        
+        w, h = occ_grid.info.width , occ_grid.info.height
+        max_dim = np.max([w, h]) * occ_grid.info.resolution
+        self.root_dim = np.max([max_dim, self.MIN_HEIGHT])
+        frame_id = occ_grid.header.frame_id
+        occ_grid = np.reshape(occ_grid.data, (h, w))
         occ_grid = self.fill_missing_cells(occ_grid)
-        dim = occ_grid.shape[0] * resolution
-        self.root_dim = np.max([np.max(dim), self.MIN_HEIGHT])
 
         if binary:
             if occ_thresh < 0 or occ_thresh > 100:
@@ -46,12 +40,25 @@ class OctomapGenerator:
         else:
             self.generate_octomap(occ_grid)
             pass
+        
+        octomap = self.octomap_msg(frame_id)
+        return octomap
 
-        return True
+    def octomap_msg(self, frame_id):
+        octomap = OctomapWithPose()
+        octomap.header.frame_id = frame_id
+        # octomap.header.stamp = rospy.Time.now()
+        octomap.origin.orientation.w = 1.0
+        octomap.octomap.binary = True
+        octomap.octomap.id = 'OcTree'
+        octomap.octomap.resolution = self.get_resolution()
+        octomap.octomap.data = self.octomap_data
+
+        return octomap
 
     def init_map(self):
         # we store octomap as in int8 array according to OctoMap's serialization implementation
-        self.octomap = []
+        self.octomap_data = []
 
     def generate_octomap(self, occ_grid):
         raise NotImplementedError()
@@ -80,13 +87,13 @@ class OctomapGenerator:
             self.max_depth += 1
 
         parent_data = self.binary_to_decimal(status[0] + status[1] + status[2] + status[3])
-        self.octomap.extend([parent_data, parent_data])
+        self.octomap_data.extend([parent_data, parent_data])
         
-        print('####### Mapa completo #######')
-        print(occ_grid)
-        print('{} {} {} {} = {}'.format(status[0], status[1], status[2], status[3], parent_data))
-        print('\noctomap: {}'.format(self.octomap))
-        print('#############################\n')
+        # print('####### Mapa completo #######')
+        # print(occ_grid)
+        # print('{} {} {} {} = {}'.format(status[0], status[1], status[2], status[3], parent_data))
+        # print('\noctomap: {}'.format(self.octomap_data))
+        # print('#############################\n')
 
         for i in range(8):
             if status[3 - i] == self.HAS_CHILDREN:
@@ -103,7 +110,21 @@ class OctomapGenerator:
         return np.array((child0, child1, child2, child3))
 
     def get_resolution(self):
-        return self.root_dim / (2 ** self.max_depth)    # root_dim = 2**max_depth * resolution
+        # return self.root_dim / (2 ** self.max_depth)    # root_dim = 2**max_depth * resolution
+        return 0.0005
+
+    def binarize(self, data, thresh=50):
+        data[np.where((data > 0) & (data < thresh))] = 0
+        data[np.where(data >= thresh)] = 1
+        return data
+
+    # TODO
+    def fill_missing_cells(self, occ_grid):
+        ''' 
+        Because the OctoMap has a set dimension, we may need to fill the Occupancy Grid 
+        with unknown cells to match the OctoMap dimensions.
+        '''
+        return occ_grid
 
     def log_odds(self, prob):
         return np.log(prob/(1 - prob))
@@ -135,10 +156,11 @@ if __name__ == '__main__':
                         [100.,   0.,   0.,  -1.,   0.,   0.,  -1.,  -1.]])
     
     octomap_gen = OctomapGenerator()
-    octomap_gen.octomap_from_occupancygrid(occ_map, 0.5)
+    octomap_gen.init_map()
+    octomap_gen.generate_binary_octomap(occ_map)
     
     print('######################################################################')
     print('Original Occupancy Grid')
     print(occ_map)
-    print('\nGenerated Octomap Data:\n{}'.format(octomap_gen.octomap))
+    print('\nGenerated OctomapWithPose:\n{}'.format(octomap_gen.octomap_msg('world')))
     print('######################################################################\n')
