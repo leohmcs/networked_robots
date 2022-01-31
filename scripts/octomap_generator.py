@@ -118,14 +118,29 @@ class OctomapGenerator:
         data[np.where(data >= thresh)] = 1
         return data
 
-    # TODO
     def fill_missing_cells(self, occ_grid):
-        ''' 
-        Because the OctoMap has a set dimension, we may need to fill the Occupancy Grid 
-        with unknown cells to match the OctoMap dimensions.
-        '''
+        dim = occ_grid.shape
+
+        if dim[0] > dim[1]:
+            filling_array = -1 * np.ones((dim[0], dim[0] - dim[1]))
+            occ_grid = np.hstack((occ_grid, filling_array))
+        elif dim[1] > dim[0]:
+            filling_array = -1 * np.ones((dim[1] - dim[0], dim[1]))
+            occ_grid = np.vstack((occ_grid, filling_array))
+
+        if occ_grid.shape[0] % 2 == 1:
+            occ_grid = self.even_dimensions(occ_grid)
+
         return occ_grid
 
+    def even_dimensions(self, occ_grid):
+        dim = occ_grid.shape[0]
+        filling_array = -1 * np.ones((dim, 1))
+        occ_grid = np.hstack((occ_grid, filling_array))
+        filling_array = -1 * np.ones((1, dim + 1))
+        occ_grid = np.vstack((occ_grid, filling_array))
+        return occ_grid
+        
     def log_odds(self, prob):
         return np.log(prob/(1 - prob))
     
@@ -154,6 +169,14 @@ if __name__ == '__main__':
                         [100., 100.,   0.,   0.,   0., 100.,  -1.,  -1.],
                         [100., 100.,   0.,   0.,   0.,   0.,  -1.,  -1.],
                         [100.,   0.,   0.,  -1.,   0.,   0.,  -1.,  -1.]])
+
+    occ_map = np.array([[ -1.,  -1.,  -1.,  -1.,  -1.],
+                        [ -1.,  -1.,  -1.,  -1.,  -1.],
+                        [ -1.,  -1.,   0.,   0.,  -1.],
+                        [ -1., 100.,   0.,   0.,  -1.],
+                        [100., 100.,   0.,   0.,  -1.],
+                        [100., 100.,   0.,   0.,  -1.],
+                        [100.,   0.,   0.,  -1.,  -1.]])
     
     octomap_gen = OctomapGenerator()
     octomap_gen.init_map()
