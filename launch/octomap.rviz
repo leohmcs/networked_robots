@@ -65,7 +65,7 @@ Visualization Manager:
       Value: true
       Voxel Alpha: 1
       Voxel Coloring: Cell Probability
-      Voxel Rendering: All Voxels
+      Voxel Rendering: Occupied Voxels
     - Alpha: 0.699999988079071
       Class: octomap_rviz_plugin/OccupancyMap
       Color Scheme: map
@@ -151,4 +151,4 @@ Window Geometry:
     collapsed: false
   Width: 1565
   X: 1037
-  Y: 593
+  Y: 482
