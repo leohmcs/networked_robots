@@ -4,22 +4,25 @@
 import sys
 import rospy
 import moveit_commander
-from moveit_msgs.msg import DisplayTrajectory
+from nav_msgs.msg import OccupancyGrid
+from moveit_msgs.msg import DisplayTrajectory, LinkPadding, LinkScale, PlanningScene
 from networked_robots.msg import Backbone
 
 import pyvisgraph as vg
 import numpy as np
-import goals_planner, joint_state_from_backbone
+import goals_planner, joint_state_from_backbone, octomap_generator
 
 
 class BackbonePlanner(object):
     def __init__(self):
         super(BackbonePlanner, self).__init__()
+        self.links_names = ['base_link', 'base', 'network_base_to_robot4', 'robot4', 'network_robot4_to_robot3', 'robot3', 'network_robot3_to_robot2', 'robot2', 'network_robot2_to_robot1', 'robot1', 'network_robot1_to_robot0', 'robot0']   # TODO
         self.backbone = {}
         self.joint_state_from_backbone = joint_state_from_backbone.JointStateFromBackbone()
+        self.octomap_generator = octomap_generator.OctomapGenerator()
 
         self.manipulator = moveit_commander.RobotCommander()
-        self.scene = moveit_commander.PlanningScene()
+        self.scene = moveit_commander.PlanningSceneInterface()
 
         self.group_name = 'backbone'
         self.move_group = moveit_commander.MoveGroupCommander(self.group_name)
@@ -28,12 +31,20 @@ class BackbonePlanner(object):
         self.backbone_sub = rospy.Subscriber('backbone', Backbone, callback=self.backbone_callback)
         
         # display planned trajectory in RViz
-        self.display_trajectory_pub = rospy.Publisher('backbone/display_planned_path', DisplayTrajectory, queue_size=20)
+        self.display_trajectory_pub = rospy.Publisher('move_group/display_planned_path', DisplayTrajectory, queue_size=20)
         
         # test
         example_path = [vg.Point(-3.94, -0.01), vg.Point(-1.41, -1.41), vg.Point(0.00, -2.00), vg.Point(1.41, -1.41), vg.Point(2.87, -0.14)]
         self.goals_planner = goals_planner.GoalsPlanner(example_path, 5, None)
         self.base_position = [example_path[0].x, example_path[0].y]
+
+        occ_map = np.array([ -1.,  -1.,  -1.,  -1., 100., 100.,  -1.,  -1., -1.,  -1.,  -1.,  -1., 100., 100.,  -1.,  -1., -1.,  -1.,   0.,   0., 100., 100.,  -1.,  -1., -1., 100.,   0.,   0.,   0., 100.,  -1.,  -1., 100., 100.,   0.,   0.,   0., 100.,  -1.,  -1., 100., 100.,   0.,   0.,   0., 100.,  -1.,  -1., 100., 100.,   0.,   0.,   0.,   0.,  -1.,  -1., 100.,   0.,   0.,  -1.,   0.,   0.,  -1.,  -1.])
+        self.grid = OccupancyGrid()
+        self.grid.data = occ_map
+        self.grid.header.frame_id = 'base_link'
+        self.grid.info.height = 8
+        self.grid.info.width = 8
+        self.grid.info.resolution = 1.0
 
     def backbone_callback(self, msg):
         names = msg.names
@@ -61,18 +72,30 @@ class BackbonePlanner(object):
         self.move_group.clear_pose_targets()
         self.backbone = {}
 
+    def update_planning_scene(self, occ_grid):
+        ''' Updates the planning scene given a new Occupancy Grid. '''
+        msg = PlanningScene()
+        msg.name = 'mordor'
+        msg.robot_state = self.move_group.get_current_state()
+        msg.robot_model_name = 'backbone_manipulator'
+        # TODO: self.scene.fixed_frame_transforms = precisa?
+        msg.link_padding = [LinkPadding(link_name=name, padding=0.0) for name in self.links_names]
+        msg.link_scale = [LinkScale(link_name=name, scale=1.0) for name in self.links_names]
+        msg.world.octomap = self.octomap_generator.octomap_from_occupancygrid(occ_grid)
+        msg.is_diff = True
+
+        self.scene.apply_planning_scene(msg)
+        
     def display_trajectory(self, trajectory):
         display_trajectory_msg = DisplayTrajectory()
         display_trajectory_msg.trajectory_start = self.manipulator.get_current_state()
         display_trajectory_msg.trajectory.append(trajectory)
-
         self.display_trajectory_pub.publish(display_trajectory_msg)
 
     def print_info(self):
         print("============ Planning frame: %s" % self.move_group.get_planning_frame())
         print("============ End effector link: %s" % self.move_group.get_end_effector_link())
         print("============ Available Planning Groups:", self.manipulator.get_group_names())
-
         print("============ Printing robot state")
         print(self.robot.get_current_state())
         print("")
@@ -83,9 +106,11 @@ rospy.init_node('backbone_planner', anonymous=True)
 
 planner = BackbonePlanner()
 
-rate = rospy.Rate(10)
+rate = rospy.Rate(0.2)
 while not rospy.is_shutdown():
     if len(planner.backbone) > 0:
         planner.plan_motion(planner.backbone)
-        
+
+    planner.update_planning_scene(planner.grid)
+
     rate.sleep()
