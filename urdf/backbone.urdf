@@ -24,13 +24,20 @@
             <material name="white"/>
             <origin rpy="0 0 0" xyz="0 0 0.005"/>
         </visual>
+        <collision>
+            <geometry>
+                <cylinder length="0.01" radius="0.05"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0.005"/>
+        </collision>
     </link>
 
-    <joint name="baselink_to_base" type="continuous">
+    <joint name="baselink_to_base" type="revolute">
         <parent link="base_link"/>
         <child link="base"/>
         <origin rpy="0 0 0" xyz="0 0 0.01"/>
         <axis xyz="0 0 1.0"/>
+        <limit lower="-1.5708" upper="1.5708" velocity="1.0" effort="30" />
     </joint>
 
     <link name="base">
@@ -64,13 +71,20 @@
             </geometry>
             <origin rpy="0 0 0" xyz="0 0 2.5"/>
         </visual>
+        <collision>
+            <geometry>
+                <cylinder length="5" radius="0.005"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 2.5"/>
+        </collision>
     </link>
 
-    <joint name="network_to_robot4" type="continuous">
+    <joint name="network_to_robot4" type="revolute">
         <parent link="network_base_to_robot4"/>
         <child link="robot4"/>
         <origin rpy="0 0 0" xyz="0 0 5"/>
         <axis xyz="0 0 1.0"/>
+        <limit lower="-1.5708" upper="1.5708" velocity="1.0" effort="30" />
     </joint>
 
     <link name="robot4">
@@ -104,13 +118,20 @@
             </geometry>
             <origin rpy="0 0 0" xyz="0 0 2.5"/>
         </visual>
+        <collision>
+            <geometry>
+                <cylinder length="5" radius="0.005"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 2.5"/>
+        </collision>
     </link>
 
-    <joint name="network_to_robot3" type="continuous">
+    <joint name="network_to_robot3" type="revolute">
         <parent link="network_robot4_to_robot3"/>
         <child link="robot3"/>
         <origin rpy="0 0 0" xyz="0 0 5"/>
         <axis xyz="0 0 1.0"/>
+        <limit lower="-1.5708" upper="1.5708" velocity="1.0" effort="30" />
     </joint>
 
     <link name="robot3">
@@ -144,13 +165,20 @@
             </geometry>
             <origin rpy="0 0 0" xyz="0 0 2.5"/>
         </visual>
+        <collision>
+            <geometry>
+                <cylinder length="5" radius="0.005"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 2.5"/>
+        </collision>
     </link>
 
-    <joint name="network_to_robot2" type="continuous">
+    <joint name="network_to_robot2" type="revolute">
         <parent link="network_robot3_to_robot2"/>
         <child link="robot2"/>
         <origin rpy="0 0 0" xyz="0 0 5"/>
         <axis xyz="0 0 1.0"/>
+        <limit lower="-1.5708" upper="1.5708" velocity="1.0" effort="30" />
     </joint>
 
     <link name="robot2">
@@ -184,13 +212,20 @@
             </geometry>
             <origin rpy="0 0 0" xyz="0 0 2.5"/>
         </visual>
+        <collision>
+            <geometry>
+                <cylinder length="5" radius="0.005"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 2.5"/>
+        </collision>
     </link>
 
-    <joint name="network_to_robot1" type="continuous">
+    <joint name="network_to_robot1" type="revolute">
         <parent link="network_robot2_to_robot1"/>
         <child link="robot1"/>
         <origin rpy="0 0 0" xyz="0 0 5"/>
         <axis xyz="0 0 1.0"/>
+        <limit lower="-1.5708" upper="1.5708" velocity="1.0" effort="30" />
     </joint>
 
     <link name="robot1">
@@ -224,13 +259,18 @@
             </geometry>
             <origin rpy="0 0 0" xyz="0 0 2.5"/>
         </visual>
+        <collision>
+            <geometry>
+                <cylinder length="5" radius="0.005"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 2.5"/>
+        </collision>
     </link>
 
-    <joint name="network_to_robot0" type="continuous">
+    <joint name="network_to_robot0" type="fixed">
         <parent link="network_robot1_to_robot0"/>
         <child link="robot0"/>
         <origin rpy="0 0 0" xyz="0 0 5"/>
-        <axis xyz="0 0 1.0"/>
     </joint>
 
     <link name="robot0">
