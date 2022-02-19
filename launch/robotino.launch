@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 
 <launch>
-    <node name='navigator' type='navigate.py' pkg='interconnected_robots' output='screen' />
-    <node name='reactive_planner' type='reactive.py' pkg='interconnected_robots' output='screen' />
+    
 </launch>
