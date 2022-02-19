@@ -14,7 +14,7 @@ import goals_planner, joint_state_from_backbone, octomap_generator
 
 
 class BackbonePlanner(object):
-    def __init__(self, num_planning_attempts=40, planning_time=10, planner_id="LazyPRMstar", pipeline_id="chomp"):
+    def __init__(self, num_planning_attempts=40, planning_time=10, planner_id="RRTstar", pipeline_id="ompl"):
         super(BackbonePlanner, self).__init__()
         self.links_names = ['base_link', 'base', 'network_base_to_robot4', 'robot4', 'network_robot4_to_robot3', 'robot3', 'network_robot3_to_robot2', 'robot2', 'network_robot2_to_robot1', 'robot1', 'network_robot1_to_robot0', 'robot0']   # TODO
         self.backbone = {}
