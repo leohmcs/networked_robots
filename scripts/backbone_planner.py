@@ -14,7 +14,7 @@ import goals_planner, joint_state_from_backbone, octomap_generator
 
 
 class BackbonePlanner(object):
-    def __init__(self):
+    def __init__(self, num_planning_attempts=40, planning_time=10, planner_id="LazyPRMstar", pipeline_id="chomp"):
         super(BackbonePlanner, self).__init__()
         self.links_names = ['base_link', 'base', 'network_base_to_robot4', 'robot4', 'network_robot4_to_robot3', 'robot3', 'network_robot3_to_robot2', 'robot2', 'network_robot2_to_robot1', 'robot1', 'network_robot1_to_robot0', 'robot0']   # TODO
         self.backbone = {}
@@ -26,9 +26,15 @@ class BackbonePlanner(object):
 
         self.group_name = 'backbone'
         self.move_group = moveit_commander.MoveGroupCommander(self.group_name)
+        self.move_group.set_num_planning_attempts(num_planning_attempts)
+        self.move_group.set_planning_time(planning_time)
+        self.move_group.set_planner_id(planner_id)
+        self.move_group.set_planning_pipeline_id(pipeline_id)
         
         # listen required backbone configuration
         self.backbone_sub = rospy.Subscriber('backbone', Backbone, callback=self.backbone_callback)
+
+        self.map_sub = rospy.Subscriber('map', OccupancyGrid, callback=self.map_callback)
         
         # display planned trajectory in RViz
         self.display_trajectory_pub = rospy.Publisher('move_group/display_planned_path', DisplayTrajectory, queue_size=20)
@@ -38,14 +44,6 @@ class BackbonePlanner(object):
         self.goals_planner = goals_planner.GoalsPlanner(example_path, 5, None)
         self.base_position = [example_path[0].x, example_path[0].y]
 
-        occ_map = np.array([ -1.,  -1.,  -1.,  -1., 100., 100.,  -1.,  -1., -1.,  -1.,  -1.,  -1., 100., 100.,  -1.,  -1., -1.,  -1.,   0.,   0., 100., 100.,  -1.,  -1., -1., 100.,   0.,   0.,   0., 100.,  -1.,  -1., 100., 100.,   0.,   0.,   0., 100.,  -1.,  -1., 100., 100.,   0.,   0.,   0., 100.,  -1.,  -1., 100., 100.,   0.,   0.,   0.,   0.,  -1.,  -1., 100.,   0.,   0.,  -1.,   0.,   0.,  -1.,  -1.])
-        self.grid = OccupancyGrid()
-        self.grid.data = occ_map
-        self.grid.header.frame_id = 'base_link'
-        self.grid.info.height = 8
-        self.grid.info.width = 8
-        self.grid.info.resolution = 1.0
-
     def backbone_callback(self, msg):
         names = msg.names
         positions = msg.positions
@@ -54,12 +52,15 @@ class BackbonePlanner(object):
             position = positions[i]
             self.backbone[name] = np.array([position.x, position.y])
 
+    def map_callback(self, msg):
+        self.update_planning_scene(msg)
+
     def plan_motion(self, backbone):
         joints_angles = np.array(self.joint_state_from_backbone.get_joints_angles(backbone))
         # swap columns because we need yaw angles first (due to the form of our robot)
         joints_angles[:,[0, 1]] = joints_angles[:,[1, 0]]
         joints_angles = joints_angles.flatten()
-        joints_angles = np.append(joints_angles, 0.0)  # include end-effector joint goal
+        # joints_angles = np.append(joints_angles, 0.0)  # include end-effector joint goal
         self.move_group.set_joint_value_target(joints_angles)
 
         self.execute()
@@ -110,7 +111,5 @@ rate = rospy.Rate(0.2)
 while not rospy.is_shutdown():
     if len(planner.backbone) > 0:
         planner.plan_motion(planner.backbone)
-
-    planner.update_planning_scene(planner.grid)
 
     rate.sleep()
