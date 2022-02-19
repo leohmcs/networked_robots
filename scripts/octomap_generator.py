@@ -190,24 +190,29 @@ class OctomapGenerator:
 
 if __name__ == '__main__':
     # Example
+    from nav_msgs.msg import OccupancyGrid
+
     occ_map = np.array([[ -1.,  -1.,  -1.,  -1., 100., 100.,  -1.,  -1.],
                         [ -1.,  -1.,  -1.,  -1., 100., 100.,  -1.,  -1.],
                         [ -1.,  -1.,   0.,   0., 100., 100.,  -1.,  -1.],
-                        [ -1., 100.,   0.,   0.,   0., 100.,  -1.,  -1.],
-                        [100., 100.,   0.,   0.,   0., 100.,  -1.,  -1.],
-                        [100., 100.,   0.,   0.,   0., 100.,  -1.,  -1.],
-                        [100., 100.,   0.,   0.,   0.,   0.,  -1.,  -1.],
-                        [100.,   0.,   0.,  -1.,   0.,   0.,  -1.,  -1.]])
+                        [ -1.,   0.,   100.,   0.,   0., 100.,  -1.,  -1.],
+                        [  0.,   0.,   100.,   0.,   0., 100.,  -1.,  -1.],
+                        [  0.,   0.,   100.,   0.,   0., 100.,  -1.,  -1.],
+                        [  0.,   0.,   100.,   0.,   0.,   0.,  -1.,  -1.],
+                        [  0.,   0.,   100.,  -1.,   0.,   0.,  -1.,  -1.]])
     
-    # occ_map = np.zeros(1600)
-    # occ_map = np.reshape(occ_map, (40, 40))
-    # occ_map[:, 37:40] = 100
+    msg = OccupancyGrid()
+    msg.header.frame_id = 'map'
+    msg.info.width = occ_map.shape[1]
+    msg.info.height = occ_map.shape[0]
+    msg.info.resolution = 1.0
+    msg.data = occ_map.flatten()
+
     octomap_gen = OctomapGenerator()
-    octomap_gen.init_map(8 * 0.5)
-    octomap_gen.generate_binary_octomap(occ_map)
+    octomap = octomap_gen.octomap_from_occupancygrid(msg)
     
     print('######################################################################')
     print('Original Occupancy Grid')
     print(occ_map)
-    print('\nGenerated OctomapWithPose:\n{}'.format(octomap_gen.octomap_msg('world')))
+    print('\nGenerated OctomapWithPose:\n{}'.format(octomap))
     print('######################################################################\n')

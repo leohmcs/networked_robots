@@ -82,7 +82,6 @@ class JointStateFromBackbone:
         previous_name = base_name
         for name in self.links_names:
             pos = None
-            print(name)
             try:
                 pos = np.array(backbone[name])
             except KeyError:
@@ -101,8 +100,6 @@ class JointStateFromBackbone:
             homo_q = np.append(q, 1)
             
             p = np.dot(T, homo_q)
-
-            print(q, p, previous_name)
 
             pitch = self.get_joint_pitch(p)
             yaw = self.get_joint_yaw(p)
