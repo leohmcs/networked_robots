@@ -42,7 +42,7 @@ class OctomapGenerator:
             self.generate_octomap(occ_grid)
             pass
         
-        position = self.__map_position(occ_grid)
+        position = self.__map_position()
         octomap = self.__octomap_msg(frame_id, position)
         return octomap
 
@@ -68,10 +68,10 @@ class OctomapGenerator:
             self.octomap_data.extend([0, -64])
             largest_voxel_size = self.root_dim/2
             for i in range(self.max_depth - 1, 0, -1):
-                if l > largest_voxel_size/2:
-                    break
                 self.octomap_data.extend([3, 0])
                 largest_voxel_size /= 2
+                if l > largest_voxel_size/2:
+                    break
         
     # TODO: function to generate non-binary octomap data
     def generate_octomap(self, occ_grid):
@@ -172,8 +172,8 @@ class OctomapGenerator:
         occ_grid = np.hstack((occ_grid, filling_array))
         return occ_grid
 
-    def __map_position(self, occ_grid):
-        pos = [-self.occ_grid_dim[0], -self.occ_grid_dim[1]]
+    def __map_position(self):
+        pos = [-self.occ_grid_dim[0]/2, -self.occ_grid_dim[1]/2]
         return pos
 
     def __log_odds(self, prob):
@@ -207,19 +207,12 @@ if __name__ == '__main__':
                         [  0.,   0.,   100.,   0.,   0., 100.,  -1.,  -1.],
                         [  0.,   0.,   100.,   0.,   0.,   0.,  -1.,  -1.],
                         [  0.,   0.,   100.,  -1.,   0.,   0.,  -1.,  -1.]])
-
-    path = '/home/leozin/UFMG/VeRLab/Networked Robots/Coppelia/tangle-map-heighfield-exact.png'
-    img = cv2.imread(path)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    img[img > 0] = 100
-    img = img.astype(int)
-    occ_map = img
     
     msg = OccupancyGrid()
     msg.header.frame_id = 'map'
     msg.info.width = occ_map.shape[1]
     msg.info.height = occ_map.shape[0]
-    msg.info.resolution = 0.45
+    msg.info.resolution = 1.0
     msg.data = occ_map.flatten()
 
     octomap_gen = OctomapGenerator()
