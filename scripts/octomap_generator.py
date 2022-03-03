@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 #coding:utf-8
 
-from turtle import filling
 from octomap_msgs.msg import OctomapWithPose
 import numpy as np
 
@@ -25,39 +24,42 @@ class OctomapGenerator:
         Output: octomap_msgs/OctomapWithPose
         '''
         self.resolution = occ_grid.info.resolution
-        self.root_dim = 2**self.max_depth * self.resolution
+        self.root_dim = np.floor(2**self.max_depth * self.resolution)
         frame_id = occ_grid.header.frame_id
         w, h = occ_grid.info.width , occ_grid.info.height
+        self.occ_grid_dim = [w * self.resolution, h * self.resolution]
         occ_grid = np.reshape(occ_grid.data, (h, w))
-        occ_grid = self.fill_missing_cells(occ_grid)
+        occ_grid = self.__fill_missing_cells(occ_grid)
 
-        self.init_map(occ_grid.shape[0])
+        self.__init_map(occ_grid.shape[0] * self.resolution)
 
         if binary:
             if occ_thresh < 0 or occ_thresh > 100:
                 raise ValueError('Occupancy threshold must be between 0 and 100.')
 
-            self.generate_binary_octomap(occ_grid, occ_thresh)
+            self.__generate_binary_octomap(occ_grid, occ_thresh)
         else:
             self.generate_octomap(occ_grid)
             pass
         
-        octomap = self.octomap_msg(frame_id)
+        position = self.__map_position(occ_grid)
+        octomap = self.__octomap_msg(frame_id, position)
         return octomap
 
-    def octomap_msg(self, frame_id):
+    def __octomap_msg(self, frame_id, position):
         octomap = OctomapWithPose()
         octomap.header.frame_id = frame_id
         # octomap.header.stamp = rospy.Time.now()   not necessary
         octomap.origin.orientation.w = 1.0
+        octomap.origin.position.x = position[0]
+        octomap.origin.position.y = position[1]
         octomap.octomap.binary = True
         octomap.octomap.id = 'OcTree'
-        octomap.octomap.resolution = self.get_resolution()
+        octomap.octomap.resolution = self.__get_resolution()
         octomap.octomap.data = self.octomap_data
-
         return octomap
 
-    def init_map(self, l):
+    def __init_map(self, l):
         # we store octomap as in int8 array according to OctoMap's serialization implementation
         self.octomap_data = []
         if l > self.root_dim:
@@ -75,14 +77,14 @@ class OctomapGenerator:
     def generate_octomap(self, occ_grid):
         raise NotImplementedError()
 
-    def generate_binary_octomap(self, occ_grid, occ_thresh=50):
+    def __generate_binary_octomap(self, occ_grid, occ_thresh=50):
         '''
         Converts an Occupancy Grid into a Binary OctoMap. More precisely, we convert it into an int8 array, which follows the
         OctoMap serialization convention. Therefore, you just need to use OctoMap library to deserialize.
         Input: occ_grid: [m x n] occupancy grid. 
         '''
         
-        children = self.get_children(occ_grid)
+        children = self.__get_children(occ_grid)
         status = []
         for i in range(4):
             child = children[i]
@@ -95,14 +97,14 @@ class OctomapGenerator:
             else:
                 status.append(self.HAS_CHILDREN)
 
-        parent_data = self.binary_to_decimal(status[0] + status[1] + status[2] + status[3])
+        parent_data = self.__binary_to_decimal(status[0] + status[1] + status[2] + status[3])
         self.octomap_data.extend([parent_data, parent_data])
 
         for i in range(8):
             if status[3 - i] == self.HAS_CHILDREN:
-                self.generate_binary_octomap(children[3 - i])
+                self.__generate_binary_octomap(children[3 - i])
 
-    def get_children(self, parent):
+    def __get_children(self, parent):
         '''Returns fours arrays, each one corresponding to a children of parent. Simply splits parent in four quadrants.'''
         dim = parent.shape
         child0 = parent[0:int(np.floor(dim[0]/2)), int(np.ceil(dim[1]/2)):dim[1]]       # first quad
@@ -112,7 +114,7 @@ class OctomapGenerator:
 
         return np.array((child0, child1, child2, child3))
 
-    def get_resolution(self):
+    def __get_resolution(self):
         return self.resolution
 
     def binarize(self, data, thresh=50):
@@ -120,7 +122,7 @@ class OctomapGenerator:
         data[np.where(data >= thresh)] = 1
         return data
 
-    def fill_missing_cells(self, occ_grid):
+    def __fill_missing_cells(self, occ_grid):
         dim = occ_grid.shape
 
         # we need a square
@@ -129,19 +131,19 @@ class OctomapGenerator:
             occ_grid = np.hstack((occ_grid, filling_array))
         elif dim[1] > dim[0]:
             filling_array = -1 * np.ones((dim[1] - dim[0], dim[1]))
-            occ_grid = np.vstack((occ_grid, filling_array))
+            occ_grid = np.vstack((filling_array, occ_grid))
 
         # the square must have a minimum size
         if occ_grid.shape[0] * self.resolution < self.MIN_HEIGHT:
-            occ_grid = self.fix_min_size(occ_grid) 
+            occ_grid = self.__fix_min_size(occ_grid) 
 
         # the square size also must be a power of 2
         if occ_grid.shape[0] % 2 == 1:
-            occ_grid = self.fix_dimensions(occ_grid)
+            occ_grid = self.__fix_dimensions(occ_grid)
 
         return occ_grid
 
-    def fix_dimensions(self, occ_grid):
+    def __fix_dimensions(self, occ_grid):
         ''' The map needs to be a square of size equal to a power of 2. '''
         dim = occ_grid.shape[0]
         power = 1
@@ -157,7 +159,7 @@ class OctomapGenerator:
         occ_grid = np.vstack((filling_array, occ_grid))
         return occ_grid
 
-    def fix_min_size(self, occ_grid):
+    def __fix_min_size(self, occ_grid):
         ''' 
         The OctoMap must have min height of (# of robots)x(network radius) 
         so the manipulator projection doesn't intersect the obstacles in 2D. 
@@ -170,10 +172,14 @@ class OctomapGenerator:
         occ_grid = np.hstack((occ_grid, filling_array))
         return occ_grid
 
-    def log_odds(self, prob):
+    def __map_position(self, occ_grid):
+        pos = [-self.occ_grid_dim[0], -self.occ_grid_dim[1]]
+        return pos
+
+    def __log_odds(self, prob):
         return np.log(prob/(1 - prob))
     
-    def binary_to_decimal(self, bin):
+    def __binary_to_decimal(self, bin):
         ''' Converts a binary input string into a decimal int following two complement convention. '''
         dec = 0
         if bin[0] == '1':
@@ -191,6 +197,7 @@ class OctomapGenerator:
 if __name__ == '__main__':
     # Example
     from nav_msgs.msg import OccupancyGrid
+    import cv2
 
     occ_map = np.array([[ -1.,  -1.,  -1.,  -1., 100., 100.,  -1.,  -1.],
                         [ -1.,  -1.,  -1.,  -1., 100., 100.,  -1.,  -1.],
@@ -200,12 +207,19 @@ if __name__ == '__main__':
                         [  0.,   0.,   100.,   0.,   0., 100.,  -1.,  -1.],
                         [  0.,   0.,   100.,   0.,   0.,   0.,  -1.,  -1.],
                         [  0.,   0.,   100.,  -1.,   0.,   0.,  -1.,  -1.]])
+
+    path = '/home/leozin/UFMG/VeRLab/Networked Robots/Coppelia/tangle-map-heighfield-exact.png'
+    img = cv2.imread(path)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img[img > 0] = 100
+    img = img.astype(int)
+    occ_map = img
     
     msg = OccupancyGrid()
     msg.header.frame_id = 'map'
     msg.info.width = occ_map.shape[1]
     msg.info.height = occ_map.shape[0]
-    msg.info.resolution = 1.0
+    msg.info.resolution = 0.45
     msg.data = occ_map.flatten()
 
     octomap_gen = OctomapGenerator()
