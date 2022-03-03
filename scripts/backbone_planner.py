@@ -8,13 +8,12 @@ from nav_msgs.msg import OccupancyGrid
 from moveit_msgs.msg import DisplayTrajectory, LinkPadding, LinkScale, PlanningScene
 from networked_robots.msg import Backbone
 
-import pyvisgraph as vg
 import numpy as np
-import goals_planner, joint_state_from_backbone, octomap_generator
+import joint_state_from_backbone, octomap_generator
 
 
 class BackbonePlanner(object):
-    def __init__(self, num_planning_attempts=40, planning_time=10, planner_id="RRTstar", pipeline_id="ompl"):
+    def __init__(self, num_planning_attempts=60, planning_time=45, planner_id="PRMstar", pipeline_id="ompl"):
         super(BackbonePlanner, self).__init__()
         self.links_names = ['base_link', 'base', 'network_base_to_robot4', 'robot4', 'network_robot4_to_robot3', 'robot3', 'network_robot3_to_robot2', 'robot2', 'network_robot2_to_robot1', 'robot1', 'network_robot1_to_robot0', 'robot0']   # TODO
         self.backbone = {}
@@ -26,10 +25,10 @@ class BackbonePlanner(object):
 
         self.group_name = 'backbone'
         self.move_group = moveit_commander.MoveGroupCommander(self.group_name)
+        self.move_group.set_planning_pipeline_id(pipeline_id)
+        self.move_group.set_planner_id(planner_id)
         self.move_group.set_num_planning_attempts(num_planning_attempts)
         self.move_group.set_planning_time(planning_time)
-        self.move_group.set_planner_id(planner_id)
-        self.move_group.set_planning_pipeline_id(pipeline_id)
         
         # listen required backbone configuration
         self.backbone_sub = rospy.Subscriber('backbone', Backbone, callback=self.backbone_callback)
@@ -38,11 +37,6 @@ class BackbonePlanner(object):
         
         # display planned trajectory in RViz
         self.display_trajectory_pub = rospy.Publisher('move_group/display_planned_path', DisplayTrajectory, queue_size=20)
-        
-        # test
-        example_path = [vg.Point(-3.94, -0.01), vg.Point(-1.41, -1.41), vg.Point(0.00, -2.00), vg.Point(1.41, -1.41), vg.Point(2.87, -0.14)]
-        self.goals_planner = goals_planner.GoalsPlanner(example_path, 5, None)
-        self.base_position = [example_path[0].x, example_path[0].y]
 
     def backbone_callback(self, msg):
         names = msg.names
