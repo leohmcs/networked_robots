@@ -62,7 +62,7 @@ class JointStateFromBackbone:
     def get_joint_yaw(self, p):
         '''p is the goal point in the link frame'''
         d = np.sqrt(p[0]**2 + p[1]**2)
-        return -np.sign(p[1])*np.arcsin(p[1]/d)
+        return np.sign(p[0])*np.arcsin(p[1]/d)
 
     def get_joints_angles(self, backbone):
         '''
@@ -115,6 +115,7 @@ class JointStateFromBackbone:
 
 if __name__ == '__main__':
     backbone = {'robot0': [6.81, -0.15], 'robot1': [5.35, -1.42], 'robot2': [3.94, -2.01], 'robot3': [2.53, -1.42]}
+    backbone = {'robot0': [2.73, 6.74], 'robot1': [0.94, 2.26]}
     node = JointStateFromBackbone()
 
     print('Example of backbone: {}'.format(backbone))
