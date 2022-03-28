@@ -1,0 +1,17 @@
+controller_list:
+  - name: fake_backbone_controller
+    type: $(arg fake_execution_type)
+    joints:
+      - baselink_to_base
+      - base_to_network
+      - network_to_robot4
+      - robot4_to_network
+      - network_to_robot3
+      - robot3_to_network
+      - network_to_robot2
+      - robot2_to_network
+      - network_to_robot1
+      - robot1_to_network
+initial:  # Define initial robot poses per group
+  - group: backbone
+    pose: home

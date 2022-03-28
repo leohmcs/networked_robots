@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: networked_robots
+    relative_path: urdf/backbone.urdf
+    xacro_args: ""
+  SRDF:
+    relative_path: config/backbone_manipulator.srdf
+  CONFIG:
+    author_name: Leonardo dos Santos
+    author_email: leohmcs@ufmg.br
+    generated_timestamp: 1646695280
