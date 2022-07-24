@@ -14,7 +14,7 @@ import goals_planner, joint_state_from_backbone, octomap_generator
 
 
 class BackbonePlanner(object):
-    def __init__(self, num_planning_attempts=40, planning_time=10, planner_id="RRTstar", pipeline_id="ompl"):
+    def __init__(self, num_planning_attempts=60, planning_time=45, planner_id="PRMstar", pipeline_id="ompl"):
         super(BackbonePlanner, self).__init__()
         self.links_names = ['base_link', 'base', 'network_base_to_robot4', 'robot4', 'network_robot4_to_robot3', 'robot3', 'network_robot3_to_robot2', 'robot2', 'network_robot2_to_robot1', 'robot1', 'network_robot1_to_robot0', 'robot0']   # TODO
         self.backbone = {}
@@ -26,10 +26,10 @@ class BackbonePlanner(object):
 
         self.group_name = 'backbone'
         self.move_group = moveit_commander.MoveGroupCommander(self.group_name)
+        self.move_group.set_planning_pipeline_id(pipeline_id)
+        self.move_group.set_planner_id(planner_id)
         self.move_group.set_num_planning_attempts(num_planning_attempts)
         self.move_group.set_planning_time(planning_time)
-        self.move_group.set_planner_id(planner_id)
-        self.move_group.set_planning_pipeline_id(pipeline_id)
         
         # listen required backbone configuration
         self.backbone_sub = rospy.Subscriber('backbone', Backbone, callback=self.backbone_callback)
