@@ -4,10 +4,12 @@
 
 import numpy as np
 
-class JointStateFromBackbone:
+
+class KinematicSolver:
     def __init__(self, net_radius=5):
         self.net_radius = net_radius
-        self.links_names = ['robot4', 'robot3', 'robot2', 'robot1', 'robot0']
+        # remember to include 'aux' link
+        self.links_names = ['aux', 'robot4', 'robot3', 'robot2', 'robot1', 'robot0']
 
     def T(self, rot, trans):
         T = np.eye(4)
@@ -64,7 +66,7 @@ class JointStateFromBackbone:
         d = np.sqrt(p[0]**2 + p[1]**2)
         return np.sign(p[0])*np.arcsin(p[1]/d)
 
-    def get_joints_angles(self, backbone):
+    def inverse_kinematics(self, backbone):
         '''
         Returns the target joints angles so that the 2D projection of the manipulator in the xy-plane is equal to 
         a given backbone.
@@ -75,7 +77,7 @@ class JointStateFromBackbone:
         correspondent link name.
         Output: list of joint angles, from the base_link to the end-effector
         '''
-        
+        num_robots = 0  # number of robots needed
         base_name = 'base_link'
         joints_angles = [[0, 0, 0]]    # base_link is always [0, 0]
         links_positions = {base_name:[0, 0, 0]}
@@ -91,14 +93,14 @@ class JointStateFromBackbone:
                 previous_name = name
                 continue
             
+            num_robots += 1
             T = self.invT(joints_angles[1:], None)
 
             trans = np.array(links_positions[previous_name])
             posR = pos - trans[:2] # pos in robot R ("previous_name") frame
-            
+
             q = np.array([pos[0], pos[1], np.sqrt(self.net_radius**2 - posR[0]**2 - posR[1]**2) + trans[2]])
             homo_q = np.append(q, 1)
-            
             p = np.dot(T, homo_q)
 
             pitch = self.get_joint_pitch(p)
@@ -110,15 +112,33 @@ class JointStateFromBackbone:
             previous_name = name
 
         joints_angles = np.array(joints_angles[1:])
-        return joints_angles[:, 1:]
+        return joints_angles[1:, 1:], num_robots
 
+    # TODO
+    def forward_kinematics(self, joints_positions):
+        pass
+
+def check_distances(backbone):
+    goals = list(backbone.values())
+    goals.append([0.0, 0.0])
+    for i in range(len(goals) - 1):
+        d = np.linalg.norm(np.array(goals[i]) - np.array(goals[i + 1]))
+        if d > 5:
+            print('Invalid backbone.')
+            return
+
+    print('Valid backbone.')
 
 if __name__ == '__main__':
     backbone = {'robot0': [6.81, -0.15], 'robot1': [5.35, -1.42], 'robot2': [3.94, -2.01], 'robot3': [2.53, -1.42]}
     backbone = {'robot0': [2.73, 6.74], 'robot1': [0.94, 2.26]}
-    node = JointStateFromBackbone()
+    backbone = {'robot0': [-20.61, -10.66], 'robot1': [-17.58, -7.17], 'robot2': [-13.62, -4.60], 'robot3': [-8.87329, -3.21066], 'robot4': [-4.25652, -2.2873]}
+
+    node = KinematicSolver()
 
     print('Example of backbone: {}'.format(backbone))
 
-    angles = node.get_joints_angles(backbone)
+    check_distances(backbone)
+
+    angles, num_robots = node.inverse_kinematics(backbone)
     print('Result: \n{}'.format(np.rad2deg(angles)))

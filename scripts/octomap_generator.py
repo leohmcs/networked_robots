@@ -51,8 +51,8 @@ class OctomapGenerator:
         octomap.header.frame_id = frame_id
         # octomap.header.stamp = rospy.Time.now()   not necessary
         octomap.origin.orientation.w = 1.0
-        octomap.origin.position.x = position[0]
-        octomap.origin.position.y = position[1]
+        # octomap.origin.position.x = position[0]
+        # octomap.origin.position.y = position[1]
         octomap.octomap.binary = True
         octomap.octomap.id = 'OcTree'
         octomap.octomap.resolution = self.__get_resolution()

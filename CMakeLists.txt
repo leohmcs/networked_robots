@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
     rospy
     std_msgs
     geometry_msgs
+    nav_msgs
     message_generation
 )
 
@@ -53,6 +54,7 @@ add_message_files(
   msg
   FILES
   Backbone.msg
+  BackboneTrajectory.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -72,6 +74,7 @@ generate_messages(
  DEPENDENCIES
  std_msgs
  geometry_msgs
+ nav_msgs
 )
 
 ################################################

@@ -37,7 +37,7 @@
         <child link="base"/>
         <origin rpy="0 0 0" xyz="0 0 0.01"/>
         <axis xyz="0 0 1.0"/>
-        <limit lower="-1.5708" upper="1.5708" velocity="1.0" effort="30" />
+        <limit lower="-1.5708" upper="1.5708" velocity="100.0" effort="1000" />
     </joint>
 
     <link name="base">
@@ -61,7 +61,7 @@
         <child link="network_base_to_robot4"/>
         <origin rpy="0 0 0" xyz="0 0 0.1"/>
         <axis xyz="0 1.0 0"/>
-        <limit lower="-1.5708" upper="1.5708" velocity="1.0" effort="30" />
+        <limit lower="-1.5708" upper="1.5708" velocity="100.0" effort="1000" />
     </joint>
 
     <link name="network_base_to_robot4">
@@ -84,7 +84,7 @@
         <child link="robot4"/>
         <origin rpy="0 0 0" xyz="0 0 5"/>
         <axis xyz="0 0 1.0"/>
-        <limit lower="-1.5708" upper="1.5708" velocity="1.0" effort="30" />
+        <limit lower="-1.5708" upper="1.5708" velocity="100.0" effort="1000" />
     </joint>
 
     <link name="robot4">
@@ -108,7 +108,7 @@
         <child link="network_robot4_to_robot3"/>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <axis xyz="0 1.0 0"/>
-        <limit lower="-1.5708" upper="1.5708" velocity="1.0" effort="30" />
+        <limit lower="-1.5708" upper="1.5708" velocity="100.0" effort="1000" />
     </joint>
 
     <link name="network_robot4_to_robot3">
@@ -131,7 +131,7 @@
         <child link="robot3"/>
         <origin rpy="0 0 0" xyz="0 0 5"/>
         <axis xyz="0 0 1.0"/>
-        <limit lower="-1.5708" upper="1.5708" velocity="1.0" effort="30" />
+        <limit lower="-1.5708" upper="1.5708" velocity="100.0" effort="1000" />
     </joint>
 
     <link name="robot3">
@@ -155,7 +155,7 @@
         <child link="network_robot3_to_robot2"/>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <axis xyz="0 1.0 0"/>
-        <limit lower="-1.5708" upper="1.5708" velocity="1.0" effort="30" />
+        <limit lower="-1.5708" upper="1.5708" velocity="100.0" effort="1000" />
     </joint>
 
     <link name="network_robot3_to_robot2">
@@ -178,7 +178,7 @@
         <child link="robot2"/>
         <origin rpy="0 0 0" xyz="0 0 5"/>
         <axis xyz="0 0 1.0"/>
-        <limit lower="-1.5708" upper="1.5708" velocity="1.0" effort="30" />
+        <limit lower="-1.5708" upper="1.5708" velocity="100.0" effort="1000" />
     </joint>
 
     <link name="robot2">
@@ -202,7 +202,7 @@
         <child link="network_robot2_to_robot1"/>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <axis xyz="0 1.0 0"/>
-        <limit lower="-1.5708" upper="1.5708" velocity="1.0" effort="30" />
+        <limit lower="-1.5708" upper="1.5708" velocity="100.0" effort="1000" />
     </joint>
 
     <link name="network_robot2_to_robot1">
@@ -225,7 +225,7 @@
         <child link="robot1"/>
         <origin rpy="0 0 0" xyz="0 0 5"/>
         <axis xyz="0 0 1.0"/>
-        <limit lower="-1.5708" upper="1.5708" velocity="1.0" effort="30" />
+        <limit lower="-1.5708" upper="1.5708" velocity="100.0" effort="1000" />
     </joint>
 
     <link name="robot1">
@@ -249,7 +249,7 @@
         <child link="network_robot1_to_robot0"/>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <axis xyz="0 1.0 0"/>
-        <limit lower="-1.5708" upper="1.5708" velocity="1.0" effort="30" />
+        <limit lower="-1.5708" upper="1.5708" velocity="100.0" effort="1000" />
     </joint>
 
     <link name="network_robot1_to_robot0">
