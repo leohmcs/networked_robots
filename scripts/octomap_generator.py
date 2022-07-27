@@ -51,8 +51,8 @@ class OctomapGenerator:
         octomap.header.frame_id = frame_id
         # octomap.header.stamp = rospy.Time.now()   not necessary
         octomap.origin.orientation.w = 1.0
-        # octomap.origin.position.x = position[0]
-        # octomap.origin.position.y = position[1]
+        octomap.origin.position.x = -13
+        octomap.origin.position.y = -13
         octomap.octomap.binary = True
         octomap.octomap.id = 'OcTree'
         octomap.octomap.resolution = self.__get_resolution()
@@ -67,7 +67,7 @@ class OctomapGenerator:
         elif l <= self.root_dim/2:
             self.octomap_data.extend([0, -64])
             largest_voxel_size = self.root_dim/2
-            for i in range(self.max_depth - 1, 0, -1):
+            for i in range(self.max_depth - 2, 0, -1):
                 self.octomap_data.extend([3, 0])
                 largest_voxel_size /= 2
                 if l > largest_voxel_size/2:
