@@ -16,23 +16,29 @@ import kinematic_solver, octomap_generator
 
 
 class BackbonePlanner(object):
-    def __init__(self, num_planning_attempts=100, planning_time=45, planner_id="PRMstar", pipeline_id="ompl"):
+    def __init__(self, num_planning_attempts=60, planning_time=45, planner_id="PRMstar", pipeline_id="ompl"):
         super(BackbonePlanner, self).__init__()
 
         # initialize moveit interfaces
         self.manipulator = moveit_commander.RobotCommander()
         self.scene = moveit_commander.PlanningSceneInterface()
 
-        self.links_names = self.manipulator.get_link_names()
-        self.robots_names = ['robot4', 'robot3', 'robot2', 'robot1', 'robot0']
-        self.backbone = {}
-        self.kinematic_solver = kinematic_solver.KinematicSolver()
-        self.octomap_generator = octomap_generator.OctomapGenerator()
+        self.group_name = 'backbone'
+        self.move_group = moveit_commander.MoveGroupCommander(self.group_name)
+        self.move_group.set_planning_pipeline_id(pipeline_id)
+        self.move_group.set_planner_id(planner_id)
+        self.move_group.set_num_planning_attempts(num_planning_attempts)
+        self.move_group.set_planning_time(planning_time)
+        # self.links_names = self.manipulator.get_link_names()
+        # self.robots_names = ['robot4', 'robot3', 'robot2', 'robot1', 'robot0']
+        # self.backbone = {}
+        # self.kinematic_solver = kinematic_solver.KinematicSolver()
+        # self.octomap_generator = octomap_generator.OctomapGenerator()
 
-        # self.groups_names = ['backbone1', 'backbone2', 'backbone3', 'backbone4', 'backbone5', 'backbone']
-        self.groups_names = self.manipulator.get_group_names()
-        self.move_groups = []
-        self.init_move_groups(self.groups_names)
+        # # self.groups_names = ['backbone1', 'backbone2', 'backbone3', 'backbone4', 'backbone5', 'backbone']
+        # self.groups_names = self.manipulator.get_group_names()
+        # self.move_groups = []
+        # self.init_move_groups(self.groups_names)
         
         self.backbone_sub = rospy.Subscriber('backbone', Backbone, callback=self.backbone_callback)
         self.map_sub = rospy.Subscriber('map', OccupancyGrid, callback=self.map_callback)
